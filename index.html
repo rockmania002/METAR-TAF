@@ -303,7 +303,15 @@ window.__pid="field-wx";</script><script src="https://www.gstatic.com/firebasejs
 <script>
 /* ---------------- config ---------------- */
 const API   = 'https://aviationweather.gov/api/data';
-const PROXY = 'https://api.allorigins.win/raw?url=';   // CORS fallback
+const PROXIES = [                                       // public CORS fallbacks, tried after your Worker
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://thingproxy.freeboard.io/fetch/' + u
+];
+// >>> Paste your Cloudflare Worker URL here, keeping the trailing ?url=
+// e.g. 'https://wx-proxy.yourname.workers.dev/?url='
+const WORKER = 'https://deploy.muhammadhamkah.workers.dev/?url=';
+const workerSet = WORKER.startsWith('http');
 const REL_LOCAL = 25, REL_REGIONAL = 75;               // km thresholds
 const METAR_BOX = 2.0;    // deg half-width (METAR stations are dense)
 const TAF_BOX   = 4.0;    // deg half-width (TAF stations are sparse)
@@ -388,22 +396,36 @@ const hhmmz = () => {
   return String(d.getUTCHours()).padStart(2,'0')+String(d.getUTCMinutes()).padStart(2,'0')+'Z';
 };
 
-/* ---------------- fetch (direct → proxy fallback) ---------------- */
+/* ---------------- fetch (direct → proxy cascade, all with timeout) ---------------- */
+async function fetchTO(url, ms){
+  const ctrl=new AbortController();
+  const id=setTimeout(()=>ctrl.abort(), ms);
+  try{ return await fetch(url,{cache:'no-store',signal:ctrl.signal}); }
+  finally{ clearTimeout(id); }
+}
 async function getJson(url){
   const target = url + (url.includes('?')?'&':'?') + 'noaa='+Date.now();
-  if(!state.useProxy){
+
+  // Ordered list of ways to fetch: your Worker first (reliable), then public proxies.
+  const tries = [];
+  if(workerSet){ tries.push(['worker', WORKER + encodeURIComponent(target), 12000]); }
+  else { tries.push(['direct', target, 8000]); }        // only attempt direct if no Worker set
+  for(const make of PROXIES) tries.push(['proxy', make(target), 12000]);
+
+  let lastErr;
+  for(const [kind, u, ms] of tries){
     try{
-      const r=await fetch(target,{cache:'no-store'});
+      const r=await fetchTO(u, ms);
       if(!r.ok) throw new Error('HTTP '+r.status);
       return await r.json();
     }catch(e){
-      state.useProxy=true;                       // flip and retry via proxy
-      showNotice('warn','Direct connection blocked (CORS) — routed through public proxy. Data is unaffected.');
+      lastErr=e;
+      if(kind==='direct'){
+        showNotice('warn','Direct connection blocked — routing through a public proxy. Data is unaffected.');
+      }
     }
   }
-  const r2=await fetch(PROXY+encodeURIComponent(target),{cache:'no-store'});
-  if(!r2.ok) throw new Error('Proxy HTTP '+r2.status);
-  return await r2.json();
+  throw lastErr || new Error('All sources unreachable');
 }
 
 function box(half){
@@ -716,7 +738,7 @@ async function poll(){
       `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} `+
       `<small>${hhmmz()}</small>`;
     setLive('ok');
-    if(!state.useProxy) clearNotice();
+    clearNotice();
   }catch(e){
     setLive('err');
     showNotice('fail','Could not load weather: '+(e.message||e)+
