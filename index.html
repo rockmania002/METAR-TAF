@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIELD WX — TOLZ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070807;
+    --bg2:#0c0d0c;
+    --bg3:#101110;
+    --line:#1d211d;
+    --line-strong:#262d26;
+    --accent:#3ddc6e;
+    --accent-dim:#1f7d42;
+    --glow:rgba(61,220,110,.55);
+    --text:#f0f3ef;
+    --text-dim:#8a938a;
+    --amber:#e8b339;
+    --red:#e2553c;
+    --mono:'IBM Plex Mono',monospace;
+    --sans:'IBM Plex Sans',sans-serif;
+    --disp:'Chakra Petch',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.5;
+    min-height:100vh;
+    padding:18px 14px 60px;
+    position:relative;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(61,220,110,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(61,220,110,.045) 1px,transparent 1px);
+    background-size:54px 54px}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(ellipse 60% 40% at 50% 0,rgba(61,220,110,.07),transparent 70%)}
+  .wrap{max-width:760px;margin:0 auto;position:relative;z-index:1}
+
+  header{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:12px;
+    padding-bottom:0;margin-bottom:14px;flex-wrap:wrap;
+  }
+  .head-left{display:flex;align-items:center;gap:13px}
+  .mark{width:40px;height:40px;flex:none;display:grid;place-items:center;
+    border:1px solid var(--accent-dim);border-radius:9px;background:var(--bg3);
+    box-shadow:0 0 16px rgba(61,220,110,.18) inset}
+  .mark svg{width:21px;height:21px}
+  .brand h1{
+    font-family:var(--disp);font-weight:700;font-size:24px;
+    letter-spacing:2px;color:var(--accent);line-height:1;
+  }
+  .brand .sub{
+    font-family:var(--mono);
+    font-size:11px;color:var(--text-dim);letter-spacing:3px;
+    text-transform:uppercase;margin-top:5px;
+  }
+  .live{
+    display:flex;align-items:center;gap:7px;font-size:11px;font-family:var(--mono);
+    letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 8px var(--accent);animation:pulse 2.4s infinite}
+  .dot.stale{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  .dot.err{background:var(--red);box-shadow:0 0 8px var(--red);animation:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .rule{height:2px;margin:0 0 18px;background:var(--accent-dim);
+    box-shadow:0 0 9px var(--glow);opacity:.55;border-radius:2px}
+
+  /* status strip */
+  .strip{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    margin-bottom:16px;
+  }
+  .cell{
+    border:1px solid var(--line);background:var(--bg2);
+    padding:10px 12px;border-radius:12px;
+  }
+  /* keep tactical mono on micro-labels & raw text even though body is sans */
+  .cell .k,.tile .tk,.declist .lbl,.taftable .rowlbl,.wxcell .cap,
+  .intsel,.toggle,.live,.brand .sub,footer,.raw,.rawtext,.rawtgl{font-family:var(--mono)}
+  .cell .k{font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--text-dim);margin-bottom:5px}
+  .cell .v{font-family:var(--disp);font-size:18px;font-weight:600;
+    color:var(--accent);letter-spacing:.5px}
+  .cell .v small{font-size:11px;color:var(--text-dim);font-weight:400;
+    font-family:var(--mono);letter-spacing:0}
+  .nrow{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+  .nrow .ntag{font-family:var(--mono);font-size:10px;font-weight:400;
+    letter-spacing:1px;color:var(--text-dim)}
+  .nrow .tafgap{margin-left:10px}
+
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    margin-bottom:18px}
+  button.act{
+    font-family:var(--disp);font-weight:600;letter-spacing:1.5px;
+    text-transform:uppercase;font-size:12px;cursor:pointer;
+    background:var(--accent);color:#04140a;border:none;border-radius:10px;
+    padding:10px 16px;transition:.15s;
+  }
+  button.act:hover{background:#54f088}
+  button.act:disabled{opacity:.4;cursor:wait}
+  button.ghost{
+    background:transparent;color:var(--text-dim);
+    border:1px solid var(--line-strong);border-radius:10px;
+  }
+  button.ghost:hover{color:var(--accent);border-color:var(--accent-dim)}
+  .toggle{display:flex;align-items:center;gap:7px;font-size:11px;
+    color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;
+    cursor:pointer;user-select:none;margin-left:auto}
+  .toggle input{accent-color:var(--accent);width:14px;height:14px}
+  select{
+    background:var(--bg3);color:var(--text);border:1px solid var(--line-strong);
+    font-family:var(--mono);font-size:12px;padding:8px 10px;cursor:pointer;border-radius:10px;
+  }
+  .intsel{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--text-dim)}
+
+  /* report cards */
+  .card{
+    border:1px solid var(--line);background:var(--bg2);
+    margin-bottom:14px;position:relative;border-radius:14px;overflow:hidden;
+  }
+  .card .head{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .card .head .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .tag{
+    font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:2px;
+    padding:3px 9px;border:1px solid var(--accent-dim);color:var(--accent);border-radius:7px;
+  }
+  .station{font-family:var(--disp);font-weight:600;font-size:17px;
+    color:var(--text);letter-spacing:1px}
+  .station .name{font-size:11px;color:var(--text-dim);font-weight:400;
+    letter-spacing:.5px;font-family:var(--mono)}
+
+  .relbadge{
+    font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+    padding:4px 10px;border:1px solid;font-family:var(--disp);font-weight:600;
+    white-space:nowrap;border-radius:8px;
+  }
+  .rel-local{color:var(--accent);border-color:var(--accent-dim);
+    background:rgba(61,220,110,.07)}
+  .rel-regional{color:var(--amber);border-color:rgba(232,179,57,.4);
+    background:rgba(232,179,57,.06)}
+  .rel-distant{color:var(--red);border-color:rgba(226,85,60,.4);
+    background:rgba(226,85,60,.06)}
+
+  .raw{
+    padding:14px;font-size:14px;line-height:1.7;word-break:break-word;
+    color:var(--text);white-space:pre-wrap;
+  }
+  .raw .hl{color:var(--accent);font-weight:600}
+  .meta{
+    display:flex;gap:18px;flex-wrap:wrap;padding:0 14px 13px;
+    font-size:11px;color:var(--text-dim);letter-spacing:.5px;
+  }
+  .meta b{color:var(--text);font-weight:500}
+  .meta .age-fresh{color:var(--accent)}
+  .meta .age-old{color:var(--amber)}
+
+  .empty{padding:22px 14px;color:var(--text-dim);font-size:13px;
+    text-align:center;letter-spacing:.5px}
+
+  .notice{
+    border:1px solid;padding:11px 13px;margin-bottom:14px;font-size:12px;
+    letter-spacing:.3px;line-height:1.6;display:none;border-radius:12px;
+  }
+  .notice.show{display:block}
+  .notice.warn{border-color:rgba(232,179,57,.45);color:var(--amber);
+    background:rgba(232,179,57,.05)}
+  .notice.fail{border-color:rgba(226,85,60,.5);color:var(--red);
+    background:rgba(226,85,60,.05)}
+
+  footer{
+    margin-top:20px;padding-top:12px;border-top:1px solid var(--line);
+    font-size:10px;color:var(--text-dim);letter-spacing:1px;
+    line-height:1.7;text-transform:uppercase;
+  }
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .swatch{width:9px;height:9px;display:inline-block}
+
+  /* tabs */
+  .tabs{display:flex;border:1px solid var(--line);margin-bottom:12px;border-radius:12px;overflow:hidden}
+  .tab{flex:1;font-family:var(--disp);font-weight:600;letter-spacing:2px;text-transform:uppercase;
+    font-size:13px;padding:12px 8px;background:var(--bg2);color:var(--text-dim);border:none;
+    border-right:1px solid var(--line);cursor:pointer;transition:.15s}
+  .tab:last-child{border-right:none}
+  .tab.active{background:var(--accent);color:#04140a}
+  .tab:not(.active):hover{color:var(--accent)}
+  .panel.hidden{display:none}
+  .panel .card{margin-bottom:0}
+
+  /* decoded dashboard tiles */
+  .dash{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line)}
+  .tile{background:var(--bg2);padding:13px 12px;min-height:72px;display:flex;flex-direction:column;
+    justify-content:center;gap:4px}
+  .tile .tk{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim)}
+  .tile .tv{font-family:var(--disp);font-weight:600;font-size:19px;color:var(--text);letter-spacing:.4px;line-height:1.1}
+  .tile .tv small{font-size:12px;color:var(--text-dim);font-family:var(--mono);font-weight:400;letter-spacing:0}
+
+  /* flight category */
+  .fc{font-family:var(--disp);font-weight:700;letter-spacing:1px;padding:2px 8px;font-size:13px;
+    display:inline-block;border:1px solid;border-radius:6px}
+  .fc-VFR{color:#3ddc6e;border-color:#2a9a4e;background:rgba(61,220,110,.10)}
+  .fc-MVFR{color:#46a8e6;border-color:#2f6f9c;background:rgba(70,168,230,.10)}
+  .fc-IFR{color:#e8b339;border-color:rgba(232,179,57,.5);background:rgba(232,179,57,.10)}
+  .fc-LIFR{color:#d46fe0;border-color:rgba(212,111,224,.5);background:rgba(212,111,224,.10)}
+
+  /* decoded list */
+  .declist{padding:12px 14px;border-top:1px solid var(--line);font-size:13px;line-height:1.6;color:var(--text)}
+  .declist .row{display:flex;gap:12px;padding:3px 0}
+  .declist .lbl{color:var(--text-dim);min-width:78px;font-size:10px;letter-spacing:1px;
+    text-transform:uppercase;padding-top:3px}
+  .declist .val{flex:1}
+
+  /* TAF table */
+  .tafwrap{border-top:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .taftable{border-collapse:collapse;min-width:100%;font-size:12px}
+  .taftable th,.taftable td{border:1px solid var(--line);padding:8px 10px;text-align:left;
+    white-space:nowrap;vertical-align:middle}
+  .taftable .rowlbl{position:sticky;left:0;background:var(--bg);color:var(--text-dim);
+    font-size:10px;letter-spacing:1px;text-transform:uppercase;z-index:1;min-width:72px}
+  .taftable td.celldata,.taftable th.celldata{background:var(--bg2);color:var(--text);font-family:var(--mono)}
+  .taftable .period{font-family:var(--disp);font-weight:600;color:var(--text);font-size:11px}
+  .taftable .ptype{font-size:10px;color:var(--accent);letter-spacing:1px;margin-top:2px}
+  .taftable .probtag{font-size:9px;color:var(--amber);letter-spacing:.5px;margin-top:3px;
+    border:1px solid rgba(232,179,57,.4);padding:0 4px;display:inline-block;border-radius:8px}
+
+  /* raw toggle */
+  .rawbox{border-top:1px solid var(--line);background:#0a0b0a}
+  .rawtgl{width:100%;text-align:left;background:transparent;border:none;color:var(--text-dim);
+    font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:11px 14px;cursor:pointer}
+  .rawtgl:hover{color:var(--accent)}
+  .rawtext{padding:0 14px 14px;font-size:13px;line-height:1.7;color:var(--text);
+    white-space:pre-wrap;word-break:break-word;display:none}
+  .rawtext.show{display:block}
+  .rawtext .hl{color:var(--accent);font-weight:600}
+
+  /* weather graphics */
+  .wxgfx{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-top:1px solid var(--line)}
+  .wxcell{background:var(--bg2);padding:14px 12px 12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .wxcell .cap{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);align-self:flex-start}
+  .wxsvg{width:100%;height:auto;display:block}
+  .wxcell:first-child .wxsvg{max-width:230px;margin:auto}
+  .wxcell:last-child .wxsvg{max-width:340px;margin:0 auto}
+  .wxicon{width:22px;height:22px;display:inline-block;vertical-align:middle}
+  .taftable td .wxicon{width:24px;height:24px}
+
+  @media (max-width:520px){
+    .strip{grid-template-columns:1fr 1fr}
+    .wxgfx{grid-template-columns:1fr}
+    .strip .cell:last-child{grid-column:1/-1}
+    .toggle{margin-left:0;width:100%}
+    .brand h1{font-size:20px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="head-left">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#3ddc6e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L20 19 L12 15 L4 19 Z"/></svg></div>
+      <div class="brand">
+        <h1>FIELD WX</h1>
+        <div class="sub">Nearest METAR · TAF — Pilot Toolkit</div>
+      </div>
+    </div>
+    <div class="live"><span class="dot" id="dot"></span><span id="liveTxt">standby</span></div>
+  </header>
+  <div class="rule"></div>
+
+  <div class="strip">
+    <div class="cell">
+      <div class="k">Your Position</div>
+      <div class="v" id="posVal">— <small>connecting GPS…</small></div>
+    </div>
+    <div class="cell">
+      <div class="k">Last Poll</div>
+      <div class="v" id="pollVal">— <small>never</small></div>
+    </div>
+    <div class="cell">
+      <div class="k">Next Refresh</div>
+      <div class="v nrow"><span class="ntag">METAR</span><span id="nextVal">—:—</span><span class="ntag tafgap">TAF</span><span id="nextTafVal">—:—</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="act" id="refreshBtn">Refresh now</button>
+    <button class="ghost act" id="locBtn">Reconnect GPS</button>
+    <label class="intsel">METAR
+      <select id="metarSel" title="METAR refresh interval">
+        <option value="5" selected>5 min</option>
+        <option value="10">10 min</option>
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+      </select>
+    </label>
+    <label class="intsel">TAF
+      <select id="tafSel" title="TAF refresh interval">
+        <option value="15" selected>15 min</option>
+        <option value="30">30 min</option>
+        <option value="60">60 min</option>
+      </select>
+    </label>
+    <label class="toggle" title="Re-acquire GPS on every poll — keep on if you're moving">
+      <input type="checkbox" id="trackChk" checked> Track movement
+    </label>
+  </div>
+
+  <div class="notice" id="notice"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="metar">METAR</button>
+    <button class="tab" data-tab="taf">TAF</button>
+  </div>
+  <div id="metarPanel" class="panel"></div>
+  <div id="tafPanel" class="panel hidden"></div>
+
+  <footer>
+    Source: aviationweather.gov · decoded on-device
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--accent)"></i>Local ≤25 km</span>
+      <span><i class="swatch" style="background:var(--amber)"></i>Regional 25–75 km</span>
+      <span><i class="swatch" style="background:var(--red)"></i>Distant &gt;75 km</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ===== TOOLKIT ANALYTICS (matches PILOT TOOLKIT events schema) ===== -->
+<script>/* PILOT TOOLKIT analytics config — same project as your other tools. Search: __cfg */
+window.__cfg={apiKey:"AIzaSyDkNK3sLWfoRIT5jU2xwMNlQmOPg5AH9WI",authDomain:"toolkit-analytics-8117e.firebaseapp.com",databaseURL:"https://toolkit-analytics-8117e-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"toolkit-analytics-8117e",storageBucket:"toolkit-analytics-8117e.firebasestorage.app",messagingSenderId:"489051170516",appId:"1:489051170516:web:cd4eb32cd57b2bfba13d41"};
+window.__pid="field-wx";</script><script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script><script>function a0_0x5b4f(_0x41f82b,_0x415c9f){_0x41f82b=_0x41f82b-0x15c;var _0x4c9740=a0_0x4c97();var _0x5b4faf=_0x4c9740[_0x41f82b];if(a0_0x5b4f['cYEKNM']===undefined){var _0x5dce8a=function(_0x24ff16){var _0x2f2429='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var _0x2ba1e6='',_0x449c28='';for(var _0x381280=0x0,_0x59b70c,_0x1cc541,_0x52b92d=0x0;_0x1cc541=_0x24ff16['charAt'](_0x52b92d++);~_0x1cc541&&(_0x59b70c=_0x381280%0x4?_0x59b70c*0x40+_0x1cc541:_0x1cc541,_0x381280++%0x4)?_0x2ba1e6+=String['fromCharCode'](0xff&_0x59b70c>>(-0x2*_0x381280&0x6)):0x0){_0x1cc541=_0x2f2429['indexOf'](_0x1cc541);}for(var _0x9d331a=0x0,_0xa0ac03=_0x2ba1e6['length'];_0x9d331a<_0xa0ac03;_0x9d331a++){_0x449c28+='%'+('00'+_0x2ba1e6['charCodeAt'](_0x9d331a)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x449c28);};a0_0x5b4f['dSIlxy']=_0x5dce8a,a0_0x5b4f['VQfyuT']={},a0_0x5b4f['cYEKNM']=!![];}var _0x3b7e2e=_0x4c9740[0x0],_0x2645b2=_0x41f82b+_0x3b7e2e,_0xb438bb=a0_0x5b4f['VQfyuT'][_0x2645b2];return!_0xb438bb?(_0x5b4faf=a0_0x5b4f['dSIlxy'](_0x5b4faf),a0_0x5b4f['VQfyuT'][_0x2645b2]=_0x5b4faf):_0x5b4faf=_0xb438bb,_0x5b4faf;}(function(_0x1ab776,_0x1ff76d){var _0x56f0d0=a0_0x5b4f,_0x3086af=_0x1ab776();while(!![]){try{var _0x5ea065=-parseInt(_0x56f0d0(0x192))/0x1*(parseInt(_0x56f0d0(0x184))/0x2)+parseInt(_0x56f0d0(0x17e))/0x3+parseInt(_0x56f0d0(0x16b))/0x4*(-parseInt(_0x56f0d0(0x185))/0x5)+-parseInt(_0x56f0d0(0x17b))/0x6*(parseInt(_0x56f0d0(0x17a))/0x7)+-parseInt(_0x56f0d0(0x194))/0x8+parseInt(_0x56f0d0(0x166))/0x9*(-parseInt(_0x56f0d0(0x165))/0xa)+parseInt(_0x56f0d0(0x167))/0xb*(parseInt(_0x56f0d0(0x18b))/0xc);if(_0x5ea065===_0x1ff76d)break;else _0x3086af['push'](_0x3086af['shift']());}catch(_0x5280f7){_0x3086af['push'](_0x3086af['shift']());}}}(a0_0x4c97,0x59c88),(function(){var _0x49b42e=a0_0x5b4f,_0x2ba1e6=window[_0x49b42e(0x16a)],_0x449c28=window[_0x49b42e(0x179)]||_0x49b42e(0x16c);if(!_0x2ba1e6||!_0x2ba1e6[_0x49b42e(0x15c)]||_0x2ba1e6[_0x49b42e(0x15c)][_0x49b42e(0x16d)](_0x49b42e(0x180))===0x0)return;if(typeof firebase===_0x49b42e(0x175))return;if(!firebase[_0x49b42e(0x161)][_0x49b42e(0x18e)])firebase[_0x49b42e(0x17c)](_0x2ba1e6);var _0x381280=firebase[_0x49b42e(0x17d)]();async function _0x59b70c(){var _0x5bd8c8=_0x49b42e,_0x52b92d=[{'u':_0x5bd8c8(0x164),'m':function(_0x52c03c){var _0xf611c7=_0x5bd8c8;return{'ip':_0x52c03c['ip'],'city':_0x52c03c[_0xf611c7(0x183)],'region':_0x52c03c[_0xf611c7(0x18d)],'country':_0x52c03c[_0xf611c7(0x193)]||_0x52c03c[_0xf611c7(0x173)],'cc':_0x52c03c[_0xf611c7(0x163)],'isp':_0x52c03c[_0xf611c7(0x181)]};}},{'u':_0x5bd8c8(0x171),'m':function(_0x4a6522){var _0x367ec8=_0x5bd8c8;return{'ip':_0x4a6522['ip'],'city':_0x4a6522[_0x367ec8(0x183)],'region':_0x4a6522[_0x367ec8(0x18d)],'country':_0x4a6522[_0x367ec8(0x173)],'cc':_0x4a6522[_0x367ec8(0x163)],'isp':_0x4a6522[_0x367ec8(0x186)]&&_0x4a6522[_0x367ec8(0x186)][_0x367ec8(0x16f)]};}},{'u':_0x5bd8c8(0x18c),'m':function(_0x177219){var _0x4b8d96=_0x5bd8c8;return{'ip':_0x177219['ip'],'city':_0x177219[_0x4b8d96(0x183)],'region':_0x177219[_0x4b8d96(0x18d)],'country':_0x177219[_0x4b8d96(0x173)],'cc':_0x177219[_0x4b8d96(0x163)],'isp':_0x177219[_0x4b8d96(0x182)]};}}];for(var _0x9d331a=0x0;_0x9d331a<_0x52b92d[_0x5bd8c8(0x18e)];_0x9d331a++){try{var _0xa0ac03=await fetch(_0x52b92d[_0x9d331a]['u'],{'cache':_0x5bd8c8(0x169)});if(!_0xa0ac03['ok'])continue;var _0x5decfe=await _0xa0ac03[_0x5bd8c8(0x170)]();if(_0x5decfe&&(_0x5decfe[_0x5bd8c8(0x16e)]||_0x5decfe[_0x5bd8c8(0x190)]===![]))continue;var _0xf8ad1e=_0x52b92d[_0x9d331a]['m'](_0x5decfe);if(_0xf8ad1e[_0x5bd8c8(0x183)]||_0xf8ad1e[_0x5bd8c8(0x173)])return _0xf8ad1e;}catch(_0x7c1f95){}}return{};}async function _0x1cc541(){var _0x5462c2=_0x49b42e,_0x393209=await _0x59b70c(),_0x1b86f6={'ts':firebase[_0x5462c2(0x17d)][_0x5462c2(0x172)][_0x5462c2(0x188)],'page':_0x449c28,'path':location[_0x5462c2(0x18f)]+location[_0x5462c2(0x189)],'city':_0x393209[_0x5462c2(0x183)]||null,'region':_0x393209[_0x5462c2(0x18d)]||null,'country':_0x393209[_0x5462c2(0x173)]||null,'cc':_0x393209['cc']||null,'isp':_0x393209[_0x5462c2(0x16f)]||null,'ip':_0x393209['ip']||null,'ua':navigator[_0x5462c2(0x177)],'ref':document[_0x5462c2(0x15f)]||null,'tz':Intl[_0x5462c2(0x187)]()[_0x5462c2(0x18a)]()[_0x5462c2(0x191)]||null};try{await firebase[_0x5462c2(0x160)]()[_0x5462c2(0x162)](),await _0x381280[_0x5462c2(0x176)](_0x5462c2(0x174))[_0x5462c2(0x168)](_0x1b86f6);}catch(_0x3ee2a3){}}if(document[_0x49b42e(0x17f)]===_0x49b42e(0x15d))_0x1cc541();else window[_0x49b42e(0x178)](_0x49b42e(0x15e),_0x1cc541);}()));function a0_0x4c97(){var _0x3cf687=['mZK1nZmYohv0z3jtEa','yxbPs2v5','y29TCgXLDgu','Bg9Hza','CMvMzxjYzxi','yxv0Aa','yxbWCW','C2LNBKLUqw5VBNLTB3vZBhK','y291BNrYEv9JB2rL','Ahr0Chm6lY9PCgfWAs5JBY9QC29UlW','otKYmhniEMrbCG','mJy2ngH1tfLmuW','mJjSrK1Vs1a','ChvZAa','BM8TC3rVCMu','x19JzMC','mJHmqNzhugm','Dw5RBM93BG','Aw5KzxHpzG','zxjYB3i','AxnW','ANnVBG','Ahr0Chm6lY9PChDOBY5PCY8','u2vYDMvYvMfSDwu','y291BNrYEq','yw5HBhL0AwnZl2v2zw50CW','Dw5KzwzPBMvK','CMvM','DxnLCKfNzw50','ywrKrxzLBNrmAxn0zw5LCG','x19WAwq','mtqWzwz5qMDO','mtKZnta2r3jKt2XY','Aw5PDgLHBgL6zufWCa','zgf0ywjHC2u','nZu3mdiWtLnxDgfY','CMvHzhLtDgf0zq','ueftveu','B3jN','B3jNyw5PEMf0Aw9Ux25HBwu','y2L0Eq','mtG2otbprLLxzMe','ndGZnJy1v0nWqwPs','y29UBMvJDgLVBG','rgf0zvrPBwvgB3jTyxq','veLnrvnuqu1q','Cgf0Ag5HBwu','CMvZB2X2zwrpChrPB25Z','mtuWotmZmZzcAMn3s2G','Ahr0Chm6lY9NzxqUz2vVANmUAw8VDJeVAxaVz2vVlMPZB24','CMvNAw9U','BgvUz3rO','Ag9ZDg5HBwu','C3vJy2vZCW','DgLTzvPVBMu','mZfwB2vwCvy','y291BNrYEv9Uyw1L'];a0_0x4c97=function(){return _0x3cf687;};return a0_0x4c97();}</script>
+
+<script>
+/* ---------------- config ---------------- */
+const API   = 'https://aviationweather.gov/api/data';
+const PROXIES = [                                       // public CORS fallbacks, tried after your Worker
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://thingproxy.freeboard.io/fetch/' + u
+];
+// >>> Paste your Cloudflare Worker URL here, keeping the trailing ?url=
+// e.g. 'https://wx-proxy.yourname.workers.dev/?url='
+const WORKER = 'https://deploy.muhammadhamkah.workers.dev/?url=';
+const workerSet = WORKER.startsWith('http');
+const REL_LOCAL = 25, REL_REGIONAL = 75;               // km thresholds
+const METAR_BOX = 2.0;    // deg half-width (METAR stations are dense)
+const TAF_BOX   = 4.0;    // deg half-width (TAF stations are sparse)
+
+let state = {
+  lat:null, lon:null, acc:null,
+  intervalMin:5,
+  tafMin:15,
+  lastTafMs:0,
+  track:true,
+  useProxy:false,
+  nextPollAt:null,
+  pollTimer:null,
+  tickTimer:null,
+  busy:false,
+  metarHit:null,
+  tafHit:null
+};
+
+/* ---------------- geo math ---------------- */
+const R = 6371; // km
+const toRad = d => d*Math.PI/180;
+function haversine(la1,lo1,la2,lo2){
+  const dLa=toRad(la2-la1), dLo=toRad(lo2-lo1);
+  const a=Math.sin(dLa/2)**2 + Math.cos(toRad(la1))*Math.cos(toRad(la2))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function bearing(la1,lo1,la2,lo2){
+  const y=Math.sin(toRad(lo2-lo1))*Math.cos(toRad(la2));
+  const x=Math.cos(toRad(la1))*Math.sin(toRad(la2))-Math.sin(toRad(la1))*Math.cos(toRad(la2))*Math.cos(toRad(lo2-lo1));
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+const COMPASS=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const compass = b => COMPASS[Math.round(b/22.5)%16];
+
+function relClass(km){
+  if(km<=REL_LOCAL)    return ['rel-local','LOCAL'];
+  if(km<=REL_REGIONAL) return ['rel-regional','REGIONAL'];
+  return ['rel-distant','DISTANT'];
+}
+
+/* ---------------- field helpers (schema-tolerant) ---------------- */
+const pick = (o,...keys)=>{for(const k of keys){if(o[k]!=null&&o[k]!=='')return o[k];}return null;};
+const num  = v => (v==null?null:(typeof v==='number'?v:parseFloat(v)));
+
+function ll(o){ return [num(pick(o,'lat','latitude')), num(pick(o,'lon','lon0','longitude'))]; }
+
+function nearest(list, kind){
+  let best=null;
+  for(const o of (list||[])){
+    const [la,lo]=ll(o);
+    if(la==null||lo==null) continue;
+    const km=haversine(state.lat,state.lon,la,lo);
+    if(!best||km<best.km){ best={o,km,la,lo}; }
+  }
+  return best;
+}
+
+/* ---------------- time ---------------- */
+function fmtAge(epochSec){
+  if(!epochSec) return null;
+  const mins=Math.round((Date.now()/1000-epochSec)/60);
+  if(mins<0) return '0 min';
+  if(mins<60) return mins+' min';
+  const h=Math.floor(mins/60), m=mins%60;
+  return h+'h '+(m<10?'0':'')+m+'m';
+}
+function epochOf(o,...keys){
+  for(const k of keys){
+    const v=o[k];
+    if(v==null||v==='') continue;
+    if(typeof v==='number') return v;          // already epoch sec
+    const t=Date.parse(v);
+    if(!isNaN(t)) return Math.floor(t/1000);
+  }
+  return null;
+}
+const clock = ms => {
+  const s=Math.max(0,Math.round(ms/1000));
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+};
+const hhmmz = () => {
+  const d=new Date();
+  return String(d.getUTCHours()).padStart(2,'0')+String(d.getUTCMinutes()).padStart(2,'0')+'Z';
+};
+
+/* ---------------- fetch (direct → proxy cascade, all with timeout) ---------------- */
+async function fetchTO(url, ms){
+  const ctrl=new AbortController();
+  const id=setTimeout(()=>ctrl.abort(), ms);
+  try{ return await fetch(url,{cache:'no-store',signal:ctrl.signal}); }
+  finally{ clearTimeout(id); }
+}
+async function getJson(url){
+  const target = url + (url.includes('?')?'&':'?') + 'noaa='+Date.now();
+
+  // Ordered list of ways to fetch: your Worker first (reliable), then public proxies.
+  const tries = [];
+  if(workerSet){ tries.push(['worker', WORKER + encodeURIComponent(target), 12000]); }
+  else { tries.push(['direct', target, 8000]); }        // only attempt direct if no Worker set
+  for(const make of PROXIES) tries.push(['proxy', make(target), 12000]);
+
+  let lastErr;
+  for(const [kind, u, ms] of tries){
+    try{
+      const r=await fetchTO(u, ms);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){
+      lastErr=e;
+      if(kind==='direct'){
+        showNotice('warn','Direct connection blocked — routing through a public proxy. Data is unaffected.');
+      }
+    }
+  }
+  throw lastErr || new Error('All sources unreachable');
+}
+
+function box(half){
+  const {lat,lon}=state;
+  return [lat-half, lon-half, lat+half, lon+half].join(',');
+}
+
+/* ---------------- render ---------------- */
+function highlight(raw){
+  if(!raw) return '';
+  // bold the station id (first token) and any AMD/COR/SPECI marker
+  return raw.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/^(\w{4})\b/,'<span class="hl">$1</span>')
+    .replace(/\b(AMD|COR|SPECI|AUTO|CAVOK|TS\w*)\b/g,'<span class="hl">$1</span>');
+}
+
+/* ---------------- METAR/TAF decoder ---------------- */
+const pad = n => String(n).padStart(2,'0');
+const KT2MS = 0.514444;
+const mps = kt => (kt*KT2MS).toFixed(1);
+const CLOUD_T={FEW:'Few',SCT:'Scattered',BKN:'Broken',OVC:'Overcast',VV:'Vertical vis',SKC:'Clear',CLR:'Clear',NSC:'No sig cloud',NCD:'No cloud'};
+const WX_D={MI:'Shallow',PR:'Partial',BC:'Patches',DR:'Drifting',BL:'Blowing',SH:'Showers',TS:'Thunderstorm',FZ:'Freezing'};
+const WX_W={DZ:'Drizzle',RA:'Rain',SN:'Snow',SG:'Snow grains',IC:'Ice crystals',PL:'Ice pellets',GR:'Hail',GS:'Small hail',UP:'Precip',
+  BR:'Mist',FG:'Fog',FU:'Smoke',VA:'Volcanic ash',DU:'Dust',SA:'Sand',HZ:'Haze',PY:'Spray',
+  PO:'Dust whirls',SQ:'Squalls',FC:'Funnel cloud',SS:'Sandstorm',DS:'Duststorm'};
+
+function parseWind(t){
+  const m=t.match(/^(VRB|\d{3})P?(\d{2,3})(?:G(\d{2,3}))?(KT|MPS|KMH)$/);
+  if(!m) return null;
+  let spd=+m[2], g=m[3]?+m[3]:null;
+  if(m[4]==='MPS'){spd=Math.round(spd*1.94384); if(g)g=Math.round(g*1.94384);}
+  else if(m[4]==='KMH'){spd=Math.round(spd/1.852); if(g)g=Math.round(g/1.852);}
+  return {dir:m[1],spd,gust:g};
+}
+function parseVis(t){
+  if(t==='CAVOK') return {text:'10 km+',sm:99,cavok:true};
+  if(/^\d{4}$/.test(t)){ const m=+t; if(m>=9999) return {text:'10 km+',sm:6.2};
+    return {text:(m%1000===0?(m/1000)+' km':m+' m'), sm:m/1609}; }
+  if(/SM$/.test(t)){
+    let p=t.replace('SM',''), plus=false;
+    if(p[0]==='P'){plus=true;p=p.slice(1);}
+    if(p[0]==='M'){p=p.slice(1);}
+    let val; if(p.includes('/')){const[a,b]=p.split('/'); val=(+a)/(+b);} else val=+p;
+    if(isNaN(val)) return null;
+    return {text:(plus?val+' SM+':val+' SM'), sm:plus?val+0.1:val};
+  }
+  return null;
+}
+function parseCloud(t){
+  const m=t.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/\/\/)(CB|TCU)?$/);
+  if(m){ const base=m[2]==='///'?null:+m[2]*100; return {cover:m[1],base,type:m[3]||null}; }
+  if(/^(SKC|CLR|NSC|NCD)$/.test(t)) return {cover:t,base:null};
+  return null;
+}
+function parseWx(t){
+  let s=t, inten='';
+  if(s[0]==='+'){inten='Heavy ';s=s.slice(1);}
+  else if(s[0]==='-'){inten='Light ';s=s.slice(1);}
+  let vc=false; if(s.startsWith('VC')){vc=true;s=s.slice(2);}
+  if(s.length<2 || s.length%2!==0) return null;
+  const parts=[];
+  for(let i=0;i<s.length;i+=2){ const c=s.substr(i,2);
+    if(WX_D[c]) parts.push(WX_D[c]); else if(WX_W[c]) parts.push(WX_W[c]); else return null; }
+  if(!parts.length) return null;
+  return (inten+parts.join(' ')+(vc?' (vicinity)':'')).trim();
+}
+function ceilingFt(clouds){
+  let c=Infinity;
+  for(const cl of clouds){ if((cl.cover==='BKN'||cl.cover==='OVC'||cl.cover==='VV') && cl.base!=null) c=Math.min(c,cl.base); }
+  return c;
+}
+function flightCat(ceil,sm){
+  if(sm==null) sm=99;
+  if(ceil<500||sm<1) return 'LIFR';
+  if(ceil<1000||sm<3) return 'IFR';
+  if(ceil<=3000||sm<=5) return 'MVFR';
+  return 'VFR';
+}
+function decodeGroup(tokens){
+  const g={wind:null,vis:null,wx:[],clouds:[],cavok:false};
+  for(const t of tokens){
+    if(!g.wind){ const w=parseWind(t); if(w){g.wind=w;continue;} }
+    const vw=t.match(/^(\d{3})V(\d{3})$/); if(vw && g.wind){ g.wind.varFrom=+vw[1]; g.wind.varTo=+vw[2]; continue; }
+    if(!g.vis){ const v=parseVis(t); if(v){g.vis=v; if(v.cavok)g.cavok=true; continue;} }
+    const cl=parseCloud(t); if(cl){g.clouds.push(cl);continue;}
+    const wx=parseWx(t); if(wx){g.wx.push(wx);continue;}
+  }
+  const ceil=g.cavok?Infinity:ceilingFt(g.clouds);
+  g.ceil=ceil;
+  g.fltCat=flightCat(ceil, g.cavok?99:(g.vis?g.vis.sm:null));
+  return g;
+}
+function cvtTemp(x){ return x[0]==='M'?-(+x.slice(1)):+x; }
+function decodeMetar(raw){
+  const toks=raw.replace(/=$/,'').trim().split(/\s+/);
+  const out={raw,station:null,timeZ:null,temp:null,dew:null,qnh:null,inHg:null};
+  let i=0;
+  if(/^(METAR|SPECI)$/.test(toks[i])) i++;
+  out.station=toks[i++];
+  if(/^\d{6}Z$/.test(toks[i]||'')){ out.timeZ=toks[i].slice(0,6); i++; }
+  const rest=[];
+  for(;i<toks.length;i++){
+    const t=toks[i];
+    if(t==='AUTO'||t==='COR'||t==='NOSIG') continue;
+    let m=t.match(/^(M?\d{2})\/(M?\d{2})$/); if(m){ out.temp=cvtTemp(m[1]); out.dew=cvtTemp(m[2]); continue; }
+    m=t.match(/^Q(\d{3,4})$/); if(m){ out.qnh=+m[1]; continue; }
+    m=t.match(/^A(\d{4})$/); if(m){ out.inHg=(+m[1]/100).toFixed(2); out.qnh=Math.round(+m[1]/100*33.8639); continue; }
+    if(t==='RMK') break;
+    rest.push(t);
+  }
+  Object.assign(out, decodeGroup(rest));
+  return out;
+}
+function decodeTaf(raw){
+  const toks=raw.replace(/=$/,'').trim().split(/\s+/);
+  const out={raw,station:null,issueZ:null,validFrom:null,validTo:null,groups:[]};
+  let i=0;
+  if(toks[i]==='TAF') i++;
+  if(/^(AMD|COR)$/.test(toks[i]||'')) i++;
+  out.station=toks[i++];
+  if(/^\d{6}Z$/.test(toks[i]||'')){ out.issueZ=toks[i].slice(0,6); i++; }
+  const vm=(toks[i]||'').match(/^(\d{2})(\d{2})\/(\d{2})(\d{2})$/);
+  if(vm){ out.validFrom={d:+vm[1],h:+vm[2]}; out.validTo={d:+vm[3],h:+vm[4]}; i++; }
+  const groups=[]; let cur={type:'INITIAL',from:out.validFrom,to:out.validTo,prob:null,tokens:[]};
+  const push=()=>{ if(cur) groups.push(cur); };
+  const range=ix=>{ const r=(toks[ix]||'').match(/^(\d{2})(\d{2})\/(\d{2})(\d{2})$/);
+    return r?{from:{d:+r[1],h:+r[2]},to:{d:+r[3],h:+r[4]}}:null; };
+  while(i<toks.length){
+    const t=toks[i];
+    let m=t.match(/^FM(\d{2})(\d{2})(\d{2})$/);
+    if(m){ push(); cur={type:'FM',from:{d:+m[1],h:+m[2]},to:out.validTo,prob:null,tokens:[]}; i++; continue; }
+    if(t==='BECMG'){ push(); const r=range(i+1); cur={type:'BECMG',from:r&&r.from,to:r&&r.to,prob:null,tokens:[]}; i+=r?2:1; continue; }
+    if(t==='TEMPO'||t==='INTER'){ push(); const r=range(i+1); cur={type:t,from:r&&r.from,to:r&&r.to,prob:null,tokens:[]}; i+=r?2:1; continue; }
+    m=t.match(/^PROB(\d{2})$/);
+    if(m){ push(); const nx=toks[i+1]; const tmp=(nx==='TEMPO'||nx==='INTER'); const ri=tmp?i+2:i+1; const r=range(ri);
+      cur={type:'PROB'+m[1]+(tmp?' '+nx:''),from:r&&r.from,to:r&&r.to,prob:+m[1],tokens:[]}; i=r?ri+1:(tmp?i+2:i+1); continue; }
+    if(t==='RMK') break;
+    cur.tokens.push(t); i++;
+  }
+  push();
+  out.groups=groups.filter(g=>g.tokens.length).map(g=>Object.assign({},g,decodeGroup(g.tokens)));
+  for(let k=0;k<out.groups.length;k++){
+    if(/^(INITIAL|FM)$/.test(out.groups[k].type)){
+      for(let j=k+1;j<out.groups.length;j++){ if(/^(FM|BECMG|INITIAL)$/.test(out.groups[j].type)){ out.groups[k].to=out.groups[j].from; break; } }
+    }
+  }
+  // Base groups (INITIAL/FM/BECMG) carry forward elements they don't restate.
+  let prevBase=null;
+  for(const gr of out.groups){
+    if(/^(INITIAL|FM|BECMG)$/.test(gr.type)){
+      if(prevBase){
+        if(!gr.wind) gr.wind=prevBase.wind;
+        if(!gr.vis) gr.vis=prevBase.vis;
+        if(!gr.clouds.length){ gr.clouds=prevBase.clouds; gr.cavok=gr.cavok||prevBase.cavok; }
+        const ceil=gr.cavok?Infinity:ceilingFt(gr.clouds);
+        gr.ceil=ceil; gr.fltCat=flightCat(ceil, gr.cavok?99:(gr.vis?gr.vis.sm:null));
+      }
+      prevBase=gr;
+    }
+  }
+  return out;
+}
+
+/* ---------------- decoded -> text helpers ---------------- */
+function windText(w){
+  if(!w) return '—';
+  if(w.spd===0) return 'Calm';
+  const dir = w.dir==='VRB' ? 'VRB' : w.dir+'°';
+  return `${dir} ${w.spd} kt <small>${mps(w.spd)} m/s${w.gust?' · G'+w.gust:''}</small>`;
+}
+function cloudLong(clouds,cavok){
+  if(cavok) return 'CAVOK';
+  if(!clouds.length) return '—';
+  const nonsig=clouds.every(c=>['SKC','CLR','NSC','NCD'].includes(c.cover));
+  if(nonsig) return CLOUD_T[clouds[0].cover]||'Clear';
+  return clouds.map(c=>`${CLOUD_T[c.cover]||c.cover}${c.base!=null?' '+c.base.toLocaleString()+' ft':''}${c.type?' ('+c.type+')':''}`).join(' · ');
+}
+function cloudShort(clouds,cavok){
+  if(cavok) return 'CAVOK';
+  if(!clouds.length) return '—';
+  return clouds.map(c=>['SKC','CLR','NSC','NCD'].includes(c.cover)?c.cover:`${c.cover}${c.base!=null?pad3(Math.round(c.base/100)):''}`).join(' ');
+}
+const pad3 = n => String(n).padStart(3,'0');
+function ceilText(ceil){ return ceil===Infinity?'—':ceil.toLocaleString()+' ft'; }
+function emptyHead(kind){ return `<div class="head"><div class="left"><span class="tag">${kind}</span></div></div>`; }
+function stationHead(kind,hit){
+  const o=hit.o;
+  const id=pick(o,'icaoId','station_id','stationId','icao')||'????';
+  const name=pick(o,'name')||'';
+  const [cls,label]=relClass(hit.km);
+  const brg=bearing(state.lat,state.lon,hit.la,hit.lo);
+  const dist=hit.km<10?hit.km.toFixed(1):Math.round(hit.km);
+  return `<div class="head"><div class="left">
+    <span class="tag">${kind}</span>
+    <span class="station">${id}${name?` <span class="name">${name}</span>`:''}</span></div>
+    <span class="relbadge ${cls}">${label} · ${dist} km ${compass(brg)}</span></div>`;
+}
+function rawBlock(raw){
+  return `<div class="rawbox"><button class="rawtgl" onclick="this.nextElementSibling.classList.toggle('show')">▾ Raw report</button>
+    <div class="rawtext">${highlight(raw)}</div></div>`;
+}
+
+/* ---------------- weather graphics (inline SVG) ---------------- */
+const CO={acc:'#3ddc6e',accDim:'#1f7d42',txt:'#f0f3ef',dim:'#8a938a',grid:'#1d211d',gridS:'#2a5238',amber:'#e8b339',cl:'#cfd6cf'};
+function polar(cx,cy,r,brg){ const a=brg*Math.PI/180; return [cx + r*Math.sin(a), cy - r*Math.cos(a)]; }
+function windCompassSVG(w){
+  const cx=60,cy=60,R=46; let s='';
+  for(let b=0;b<360;b+=30){
+    const [x1,y1]=polar(cx,cy,R,b), [x2,y2]=polar(cx,cy,R-(b%90===0?9:5),b);
+    s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${b%90===0?CO.dim:CO.gridS}" stroke-width="1"/>`;
+  }
+  const lab=(t,b)=>{const[x,y]=polar(cx,cy,R-15,b);return `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="middle" font-size="9" fill="${CO.dim}">${t}</text>`;};
+  s+=lab('N',0)+lab('E',90)+lab('S',180)+lab('W',270);
+  if(w && w.dir!=='VRB' && w.spd>0){
+    const dir=+w.dir;
+    if(w.varFrom!=null){
+      const sweep=(w.varTo-w.varFrom+360)%360, [ax,ay]=polar(cx,cy,R-2,w.varFrom), [bx,by]=polar(cx,cy,R-2,w.varTo);
+      s+=`<path d="M ${ax.toFixed(1)} ${ay.toFixed(1)} A ${R-2} ${R-2} 0 ${sweep>180?1:0} 1 ${bx.toFixed(1)} ${by.toFixed(1)}" stroke="${CO.accDim}" stroke-width="2" fill="none" opacity="0.7"/>`;
+    }
+    const [tx,ty]=polar(cx,cy,R-4,dir), [hx,hy]=polar(cx,cy,12,dir);
+    s+=`<line x1="${tx.toFixed(1)}" y1="${ty.toFixed(1)}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${CO.acc}" stroke-width="3"/>`;
+    const d=(dir+180)%360, [px,py]=polar(hx,hy,7,d), [qx,qy]=polar(hx,hy,7,d+150), [rx,ry]=polar(hx,hy,7,d-150);
+    s+=`<polygon points="${px.toFixed(1)},${py.toFixed(1)} ${qx.toFixed(1)},${qy.toFixed(1)} ${rx.toFixed(1)},${ry.toFixed(1)}" fill="${CO.acc}"/>`;
+  }
+  const big = w?(w.dir==='VRB'?'VRB':(w.spd===0?'CALM':w.spd)):'—';
+  const small = w&&w.dir!=='VRB'&&w.spd>0?(w.dir+'° · '+mps(w.spd)+' m/s'):'';
+  s+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="16" fill="${CO.txt}" font-weight="700">${big}</text>`;
+  s+=`<text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="7.5" fill="${CO.dim}">${small}</text>`;
+  return `<svg viewBox="0 0 120 120" class="wxsvg" font-family="monospace">${s}</svg>`;
+}
+function cloudProfileSVG(clouds,cavok,ceil){
+  const W=200,H=200,padL=30,padR=6,padT=10,padB=12,plotH=H-padT-padB;
+  const real=(clouds||[]).filter(c=>c.base!=null);
+  if(cavok||!real.length){
+    return `<svg viewBox="0 0 ${W} ${H}" class="wxsvg" font-family="monospace"><text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="11" fill="${CO.dim}">${cavok?'CAVOK':'No cloud reported'}</text></svg>`;
+  }
+  const maxBase=Math.max(...real.map(c=>c.base),6000), scaleMax=Math.ceil(maxBase/6000)*6000;
+  const yOf=ft=>padT+plotH*(1-ft/scaleMax);
+  let s='';
+  for(let a=0;a<=scaleMax;a+=6000){const yy=yOf(a);
+    s+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="${CO.grid}" stroke-width="1"/>`;
+    s+=`<text x="${padL-3}" y="${(yy+3).toFixed(1)}" text-anchor="end" font-size="7.5" fill="${CO.dim}">${a>=1000?(a/1000)+'k':a}</text>`;
+  }
+  const ok={FEW:2,SCT:4,BKN:6,OVC:8,VV:8};
+  for(const c of real){const yy=yOf(c.base);
+    const isC=(c.cover==='BKN'||c.cover==='OVC'||c.cover==='VV')&&c.base===ceil, col=isC?CO.acc:CO.dim, n=ok[c.cover]||0;
+    let dots='';
+    for(let i=0;i<8;i++) dots+=`<rect x="${(padL+3+i*6).toFixed(1)}" y="${(yy-2.5).toFixed(1)}" width="4.5" height="5" fill="${i<n?col:CO.grid}"/>`;
+    s+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="${col}" stroke-width="1" stroke-dasharray="2 2" opacity="0.55"/>`+dots;
+    s+=`<text x="${W-padR}" y="${(yy-4).toFixed(1)}" text-anchor="end" font-size="8.5" fill="${col}">${c.cover} ${c.base.toLocaleString()}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" class="wxsvg" font-family="monospace">${s}</svg>`;
+}
+function wxIconSVG(g){
+  const wx=((g.wx||[]).join(' ')).toLowerCase();
+  const clear=g.cavok||!g.clouds.length||g.clouds.every(c=>['SKC','CLR','NSC','NCD'].includes(c.cover));
+  let k = clear?'clear':(g.clouds.some(c=>['BKN','OVC'].includes(c.cover))?'cloud':'partly');
+  if(wx.includes('thunder')) k='storm';
+  else if(wx.includes('rain')||wx.includes('drizzle')||wx.includes('shower')) k='rain';
+  else if(wx.includes('fog')||wx.includes('mist')||wx.includes('haze')) k='fog';
+  const cloud=`<path d="M7 16 a4 4 0 0 1 0-8 a5 5 0 0 1 9.5 -1.5 A3.5 3.5 0 0 1 17 16 Z" fill="${CO.cl}"/>`;
+  let inner='';
+  if(k==='clear') inner=`<circle cx="12" cy="12" r="5.5" fill="${CO.amber}"/>`;
+  else if(k==='partly') inner=`<circle cx="9" cy="9" r="3.5" fill="${CO.amber}"/>`+`<path d="M9 17 a3.5 3.5 0 0 1 0-7 a4.2 4.2 0 0 1 8 -1 A3 3 0 0 1 16.5 17 Z" fill="${CO.cl}"/>`;
+  else if(k==='cloud') inner=cloud;
+  else if(k==='rain') inner=cloud+`<line x1="9" y1="17" x2="8" y2="21" stroke="${CO.acc}" stroke-width="1.6"/><line x1="13" y1="17" x2="12" y2="21" stroke="${CO.acc}" stroke-width="1.6"/>`;
+  else if(k==='storm') inner=cloud+`<polygon points="12,15.5 8.5,21 11,21 9.5,24 14,17.5 11.5,17.5" fill="${CO.amber}"/>`;
+  else inner=cloud+`<line x1="6" y1="19" x2="18" y2="19" stroke="${CO.cl}" stroke-width="1.4"/><line x1="7.5" y1="22" x2="16.5" y2="22" stroke="${CO.cl}" stroke-width="1.4"/>`;
+  return `<svg viewBox="0 0 24 24" class="wxicon">${inner}</svg>`;
+}
+
+/* ---------------- panel renderers ---------------- */
+function renderMetarPanel(hit){
+  const el=document.getElementById('metarPanel');
+  if(!hit){ el.innerHTML=`<div class="card">${emptyHead('METAR')}<div class="empty">No METAR station found in range.</div></div>`; return; }
+  const o=hit.o, raw=pick(o,'rawOb','rawText','raw_text','raw')||'';
+  const d=decodeMetar(raw);
+  const obs=epochOf(o,'obsTime','reportTime','receiptTime');
+  const age=fmtAge(obs);
+  el.innerHTML=`<div class="card">
+    ${stationHead('METAR',hit)}
+    <div class="dash">
+      <div class="tile"><div class="tk">Flight cat</div><div class="tv"><span class="fc fc-${d.fltCat}">${d.fltCat}</span></div></div>
+      <div class="tile"><div class="tk">Temp / Dew</div><div class="tv">${d.temp!=null?d.temp+'°C':'—'} <small>${d.dew!=null?'/ '+d.dew+'°':''}</small></div></div>
+      <div class="tile"><div class="tk">Wind</div><div class="tv" style="font-size:15px">${windText(d.wind)}</div></div>
+      <div class="tile"><div class="tk">Visibility</div><div class="tv">${d.vis?d.vis.text:'—'}</div></div>
+      <div class="tile"><div class="tk">Ceiling</div><div class="tv">${ceilText(d.ceil)}</div></div>
+      <div class="tile"><div class="tk">QNH</div><div class="tv">${d.qnh||'—'} <small>${d.qnh?'hPa':''}</small></div></div>
+    </div>
+    <div class="wxgfx">
+      <div class="wxcell"><span class="cap">Wind</span>${windCompassSVG(d.wind)}</div>
+      <div class="wxcell"><span class="cap">Cloud profile</span>${cloudProfileSVG(d.clouds,d.cavok,d.ceil)}</div>
+    </div>
+    <div class="declist">
+      <div class="row"><div class="lbl">Sky</div><div class="val">${cloudLong(d.clouds,d.cavok)}</div></div>
+      ${d.wx.length?`<div class="row"><div class="lbl">Weather</div><div class="val">${d.wx.join(' · ')}</div></div>`:''}
+      <div class="row"><div class="lbl">Observed</div><div class="val">${age?age+' ago':'—'}${d.timeZ?' · '+d.timeZ.slice(2)+'Z':''}</div></div>
+    </div>
+    ${rawBlock(raw)}
+  </div>`;
+}
+function tafDateMs(t){
+  if(!t) return null;
+  const now=Date.now(), n=new Date(now), y=n.getUTCFullYear(), m=n.getUTCMonth();
+  let ms=Date.UTC(y,m,t.d,t.h,0,0);
+  if(ms-now < -12*864e5) ms=Date.UTC(y,m+1,t.d,t.h,0,0);
+  else if(ms-now > 32*864e5) ms=Date.UTC(y,m-1,t.d,t.h,0,0);
+  return ms;
+}
+function condDesc(c){
+  if(c.wx && c.wx.length) return c.wx.join(', ');
+  if(c.cavok) return 'CAVOK';
+  if(!c.clouds || !c.clouds.length) return '—';
+  const ord={FEW:1,SCT:2,BKN:3,OVC:4,VV:4};
+  let best=null;
+  for(const cl of c.clouds){ if(ord[cl.cover] && (!best || ord[cl.cover]>ord[best])) best=cl.cover; }
+  return ({FEW:'Few clouds',SCT:'Scattered clouds',BKN:'Broken clouds',OVC:'Overcast',VV:'Obscured'})[best]||'Clear';
+}
+function mergeCond(base, ov){
+  if(!ov) return base;
+  const m={wind:base.wind,vis:base.vis,wx:base.wx,clouds:base.clouds,cavok:base.cavok};
+  if(ov.wind) m.wind=ov.wind;
+  if(ov.vis) m.vis=ov.vis;
+  if(ov.wx && ov.wx.length) m.wx=ov.wx;
+  if(ov.clouds && ov.clouds.length){ m.clouds=ov.clouds; m.cavok=ov.cavok; }
+  const ceil=m.cavok?Infinity:ceilingFt(m.clouds);
+  m.ceil=ceil; m.fltCat=flightCat(ceil, m.cavok?99:(m.vis?m.vis.sm:null));
+  return m;
+}
+function renderTafPanel(hit){
+  const el=document.getElementById('tafPanel');
+  if(!hit){ el.innerHTML=`<div class="card">${emptyHead('TAF')}<div class="empty">No TAF station found in range.</div></div>`; return; }
+  const o=hit.o, raw=pick(o,'rawTAF','rawText','raw_text','raw')||'';
+  const d=decodeTaf(raw);
+  const iss=epochOf(o,'issueTime','receiptTime');
+  const vf=d.validFrom, vt=d.validTo;
+  const validStr = (vf&&vt) ? `${pad(vf.h)}Z (${pad(vf.d)}) → ${pad(vt.h)}Z (${pad(vt.d)})` : '—';
+  const bases=d.groups.filter(g=>/^(INITIAL|FM|BECMG)$/.test(g.type));
+  const overlays=d.groups.filter(g=>/^(TEMPO|INTER|PROB)/.test(g.type));
+  for(let i=0;i<bases.length;i++){ bases[i].govFrom=bases[i].from; bases[i].govTo=(i+1<bases.length?bases[i+1].from:vt); }
+  const startMs0=tafDateMs(vf), endMs=tafDateMs(vt);
+  if(!bases.length || startMs0==null || endMs==null){
+    el.innerHTML=`<div class="card">${stationHead('TAF',hit)}<div class="empty">Could not build hourly view — see raw.</div>${rawBlock(raw)}</div>`; return;
+  }
+  // start at the current hour if we're already inside the window (hide the past), else valid start
+  const nowHr=Math.floor(Date.now()/36e5)*36e5;
+  let startMs=Math.floor(Math.max(startMs0, Math.min(nowHr, endMs-36e5))/36e5)*36e5;
+  const cols=[];
+  for(let ts=startMs; ts<endMs && cols.length<30; ts+=36e5){
+    const base=bases.find(b=>{const f=tafDateMs(b.govFrom),t=tafDateMs(b.govTo);return f!=null&&t!=null&&ts>=f&&ts<t;}) || bases[bases.length-1];
+    const ov=overlays.find(g=>{const f=tafDateMs(g.from),t=tafDateMs(g.to);return f!=null&&t!=null&&ts>=f&&ts<t;}) || null;
+    cols.push({ts, cond:mergeCond(base,ov), prob:ov?ov.prob:null, ovType:ov?ov.type:null});
+  }
+  const colHdr=cols.map(c=>{
+    const hh=pad(new Date(c.ts).getUTCHours())+'Z';
+    let tag='';
+    if(c.prob) tag=`<div class="probtag">${c.prob}%</div>`;
+    else if(c.ovType && /TEMPO|INTER/.test(c.ovType)) tag=`<div class="probtag">${c.ovType}</div>`;
+    return `<th class="celldata"><div class="period">${hh}</div>${tag}</th>`;
+  }).join('');
+  const row=(label,fn)=>`<tr><td class="rowlbl">${label}</td>${cols.map(c=>`<td class="celldata">${fn(c.cond,c)}</td>`).join('')}</tr>`;
+  el.innerHTML=`<div class="card">
+    ${stationHead('TAF',hit)}
+    <div class="declist"><div class="row"><div class="lbl">Valid</div><div class="val">${validStr}${iss?' · issued '+(fmtAge(iss)||'?')+' ago':''}</div></div></div>
+    <div class="tafwrap"><table class="taftable">
+      <tr><th class="rowlbl">Time</th>${colHdr}</tr>
+      ${row('Wx', c=>wxIconSVG(c))}
+      ${row('Flight cat', c=>`<span class="fc fc-${c.fltCat}">${c.fltCat}</span>`)}
+      ${row('Weather', c=>condDesc(c))}
+      ${row('Visibility', c=>c.vis?c.vis.text:'—')}
+      ${row('Ceiling', c=>ceilText(c.ceil))}
+      ${row('Wind', c=>c.wind?(c.wind.dir==='VRB'?'VRB':c.wind.dir+'°'):'—')}
+      ${row('Speed', c=>c.wind?`${c.wind.spd} kt<br><small style="color:var(--text-dim)">${mps(c.wind.spd)} m/s</small>`:'—')}
+      ${row('Gusts', c=>c.wind&&c.wind.gust?'G'+c.wind.gust:'—')}
+    </table></div>
+    ${rawBlock(raw)}
+  </div>`;
+}
+
+/* ---------------- status UI ---------------- */
+function setLive(kind){ // ok | stale | err
+  const dot=document.getElementById('dot'), t=document.getElementById('liveTxt');
+  dot.className='dot'+(kind==='err'?' err':kind==='stale'?' stale':'');
+  t.textContent = kind==='err'?'error':kind==='stale'?'stale':'live';
+}
+function showNotice(type,msg){
+  const n=document.getElementById('notice');
+  n.className='notice show '+type; n.textContent=msg;
+}
+function clearNotice(){ document.getElementById('notice').className='notice'; }
+
+function paintPos(){
+  document.getElementById('posVal').innerHTML =
+    state.lat==null ? '— <small>GPS not connected</small>'
+    : `${state.lat.toFixed(3)}, ${state.lon.toFixed(3)} <small>GPS ±${Math.round(state.acc||0)}m</small>`;
+}
+
+/* ---------------- core cycle ---------------- */
+function getLocation(){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation) return rej(new Error('Geolocation unsupported'));
+    navigator.geolocation.getCurrentPosition(
+      p=>{ state.lat=p.coords.latitude; state.lon=p.coords.longitude; state.acc=p.coords.accuracy; paintPos(); res(); },
+      e=>rej(e),
+      {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+    );
+  });
+}
+
+async function poll(){
+  if(state.busy) return;
+  state.busy=true;
+  const btn=document.getElementById('refreshBtn');
+  btn.disabled=true; btn.textContent='Polling…';
+  try{
+    if(state.lat==null || state.track){ await getLocation(); }
+
+    const tafDue = (Date.now() - state.lastTafMs) >= (state.tafMin*60*1000 - 5000);
+    const [metars, tafs] = await Promise.all([
+      getJson(`${API}/metar?format=json&bbox=${box(METAR_BOX)}`),
+      tafDue ? getJson(`${API}/taf?format=json&bbox=${box(TAF_BOX)}`).catch(()=>null) : Promise.resolve(undefined)
+    ]);
+
+    state.metarHit = nearest(metars,'METAR');
+    renderMetarPanel(state.metarHit);
+    if(tafDue && tafs){
+      state.tafHit = nearest(tafs,'TAF');
+      renderTafPanel(state.tafHit);
+      state.lastTafMs = Date.now();
+    }
+
+    const now=new Date();
+    document.getElementById('pollVal').innerHTML =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} `+
+      `<small>${hhmmz()}</small>`;
+    setLive('ok');
+    clearNotice();
+  }catch(e){
+    setLive('err');
+    showNotice('fail','Could not load weather: '+(e.message||e)+
+      '. Check that location permission is granted and you have a connection.');
+  }finally{
+    state.busy=false; btn.disabled=false; btn.textContent='Refresh now';
+    scheduleNext();
+  }
+}
+
+function scheduleNext(){
+  clearTimeout(state.pollTimer);
+  state.nextPollAt=Date.now()+state.intervalMin*60*1000;
+  state.pollTimer=setTimeout(poll, state.intervalMin*60*1000);
+}
+
+function tick(){
+  if(state.nextPollAt){
+    document.getElementById('nextVal').textContent=clock(state.nextPollAt-Date.now());
+  }
+  const tafEl=document.getElementById('nextTafVal');
+  if(tafEl){
+    tafEl.textContent = state.lastTafMs
+      ? clock((state.lastTafMs + state.tafMin*60*1000) - Date.now())
+      : '—:—';
+  }
+}
+
+/* ---------------- wire up ---------------- */
+document.getElementById('refreshBtn').onclick=()=>poll();
+document.getElementById('locBtn').onclick=async()=>{
+  try{ await getLocation(); poll(); }
+  catch(e){ showNotice('fail','Location error: '+(e.message||e)); }
+};
+document.getElementById('metarSel').onchange=e=>{
+  state.intervalMin=parseInt(e.target.value,10); scheduleNext();
+};
+document.getElementById('tafSel').onchange=e=>{
+  state.tafMin=parseInt(e.target.value,10);
+};
+document.getElementById('trackChk').onchange=e=>{ state.track=e.target.checked; };
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  const tab=b.dataset.tab;
+  state.activeTab=tab;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active', x===b));
+  document.getElementById('metarPanel').classList.toggle('hidden', tab!=='metar');
+  document.getElementById('tafPanel').classList.toggle('hidden', tab!=='taf');
+});
+
+state.tickTimer=setInterval(tick,1000);
+
+/* boot */
+(async()=>{
+  try{ await getLocation(); }
+  catch(e){ showNotice('warn','Waiting for location permission. Tap “Reconnect GPS” to grant access.'); paintPos(); }
+  poll();
+})();
+</script>
+</body>
+</html>
